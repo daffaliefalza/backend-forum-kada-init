@@ -27,9 +27,9 @@ const postSchema = new mongoose.Schema(
       default: "General",
     },
     author: {
-      type: String,
-      required: [true, "Please add an author name"],
-      trim: true,
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
     },
   },
   { timestamps: true },
