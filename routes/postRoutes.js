@@ -8,6 +8,8 @@ const {
   deletePost,
 } = require("../controllers/postController");
 
+const { protect } = require("../middleware/auth");
+
 // Get All Post
 router.get("/", getPosts);
 
@@ -15,12 +17,12 @@ router.get("/", getPosts);
 router.get("/:id", getPost);
 
 // Create post
-router.post("/", createPost);
+router.post("/", protect, createPost);
 
 // Update post
-router.put("/:id", updatePost);
+router.put("/:id", protect, updatePost);
 
 // Delete Post
-router.delete("/:id", deletePost);
+router.delete("/:id", protect, deletePost);
 
 module.exports = router;
