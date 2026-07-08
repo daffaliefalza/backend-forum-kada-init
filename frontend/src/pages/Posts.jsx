@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { fetchPosts, createPost } from "../api/posts";
+import { useNavigate } from "react-router-dom";
+import { fetchPosts, createPost, updatePost, deletePost } from "../api/posts";
 
 const CATEGORIES = [
   "General",
@@ -11,7 +12,8 @@ const CATEGORIES = [
   "Project",
 ];
 
-function Posts() {
+function Posts({ user }) {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,7 +22,11 @@ function Posts() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("General");
-  const [author, setAuthor] = useState("");
+
+  const [editingPost, setEditingPost] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editCategory, setEditCategory] = useState("General");
 
   const loadPosts = async () => {
     try {
@@ -42,17 +48,21 @@ function Posts() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!title.trim() || !content.trim() || !author.trim()) {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    if (!title.trim() || !content.trim()) {
       alert("Please fill in all fields");
       return;
     }
 
     try {
-      await createPost({ title, content, category, author });
+      await createPost({ title, content, category });
       setTitle("");
       setContent("");
       setCategory("General");
-      setAuthor("");
       setShowForm(false);
       loadPosts();
     } catch (err) {
@@ -64,8 +74,55 @@ function Posts() {
     setTitle("");
     setContent("");
     setCategory("General");
-    setAuthor("");
     setShowForm(false);
+  };
+
+  const handleEdit = (post) => {
+    setEditingPost(post._id);
+    setEditTitle(post.title);
+    setEditContent(post.content);
+    setEditCategory(post.category);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPost(null);
+    setEditTitle("");
+    setEditContent("");
+    setEditCategory("General");
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+
+    if (!editTitle.trim() || !editContent.trim()) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    try {
+      await updatePost(editingPost, {
+        title: editTitle,
+        content: editContent,
+        category: editCategory,
+      });
+      handleCancelEdit();
+      loadPosts();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) {
+      return;
+    }
+
+    try {
+      await deletePost(id);
+      loadPosts();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -95,27 +152,24 @@ function Posts() {
     <div className="posts-page">
       {error && <div className="error-message">{error}</div>}
 
-      {!showForm && (
+      {user && !showForm && (
         <button className="btn-toggle" onClick={() => setShowForm(true)}>
           + Create Post
         </button>
+      )}
+
+      {!user && (
+        <div className="login-prompt">
+          <p>
+            Please <a href="/login">login</a> to create a post.
+          </p>
+        </div>
       )}
 
       {showForm && (
         <div className="create-post">
           <h2>Create New Post</h2>
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="author">Your Name</label>
-              <input
-                type="text"
-                id="author"
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Enter your name"
-              />
-            </div>
-
             <div className="form-group">
               <label htmlFor="title">Title</label>
               <input
@@ -178,20 +232,94 @@ function Posts() {
         ) : (
           posts.map((post) => (
             <div key={post._id} className="post-card">
-              <div className="post-header">
-                <span
-                  className="post-category"
-                  style={{ backgroundColor: getCategoryColor(post.category) }}
-                >
-                  {post.category}
-                </span>
-                <span className="post-date">{formatDate(post.createdAt)}</span>
-              </div>
-              <h3 className="post-title">{post.title}</h3>
-              <p className="post-content">{post.content}</p>
-              <div className="post-footer">
-                <span className="post-author">By {post.author}</span>
-              </div>
+              {editingPost === post._id ? (
+                <form onSubmit={handleUpdate}>
+                  <div className="form-group">
+                    <label htmlFor="edit-title">Title</label>
+                    <input
+                      type="text"
+                      id="edit-title"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="edit-category">Category</label>
+                    <select
+                      id="edit-category"
+                      value={editCategory}
+                      onChange={(e) => setEditCategory(e.target.value)}
+                    >
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="edit-content">Content</label>
+                    <textarea
+                      id="edit-content"
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      rows="5"
+                    />
+                  </div>
+
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      className="btn-cancel"
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit">Update</button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div className="post-header">
+                    <span
+                      className="post-category"
+                      style={{
+                        backgroundColor: getCategoryColor(post.category),
+                      }}
+                    >
+                      {post.category}
+                    </span>
+                    <span className="post-date">
+                      {formatDate(post.createdAt)}
+                    </span>
+                  </div>
+                  <h3 className="post-title">{post.title}</h3>
+                  <p className="post-content">{post.content}</p>
+                  <div className="post-footer">
+                    <span className="post-author">
+                      By {post.author?.name || "Unknown"}
+                    </span>
+                    {user && user._id === post.author?._id && (
+                      <div className="post-actions">
+                        <button
+                          className="btn-edit"
+                          onClick={() => handleEdit(post)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn-delete"
+                          onClick={() => handleDelete(post._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           ))
         )}
