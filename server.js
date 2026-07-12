@@ -7,6 +7,7 @@ const connectDB = require("./config/db");
 const Post = require("./models/Post");
 const postRoutes = require("./routes/postRoutes");
 const authRoutes = require("./routes/authRoutes");
+const commentRoutes = require("./routes/commentRoutes");
 dotenv.config();
 
 const PORT = process.env.PORT || 5002;
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/posts", postRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/comments", commentRoutes);
 
 app.listen(PORT, () => {
   console.log("Port is running on ", PORT);

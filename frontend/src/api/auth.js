@@ -59,3 +59,20 @@ export const logoutUser = async () => {
 
   return res.json();
 };
+
+// Google OAuth Login
+export const googleLoginUser = async (credential) => {
+  const res = await fetch(`${API_URL}/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ credential }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message);
+  }
+
+  return res.json();
+};

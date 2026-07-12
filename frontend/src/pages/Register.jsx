@@ -1,17 +1,15 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-
-import { registerUser } from "../api/auth";
+import { GoogleLogin } from "@react-oauth/google";
+import { registerUser, googleLoginUser } from "../api/auth";
 
 function Register({ onRegister }) {
-  // Declare state variables
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  // Function to handle when its submitted
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
@@ -22,6 +20,16 @@ function Register({ onRegister }) {
       navigate("/posts");
     } catch (error) {
       setError(error.message);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      await googleLoginUser(credentialResponse.credential);
+      await onRegister();
+      navigate("/posts");
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -55,7 +63,7 @@ function Register({ onRegister }) {
           <div className="form-group">
             <label>Password</label>
             <input
-              type="Password"
+              type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter your Password"
@@ -63,6 +71,16 @@ function Register({ onRegister }) {
           </div>
           <button type="submit">Register</button>
         </form>
+
+        <div className="divider">
+          <span>or</span>
+        </div>
+
+        <GoogleLogin
+          onSuccess={handleGoogleSuccess}
+          onError={() => setError("Google login failed")}
+        />
+
         <p className="auth-link">
           Already have an account? <Link to="/login">Login</Link>
         </p>

@@ -5,6 +5,7 @@ const {
   login,
   getMe,
   logout,
+  googleLogin,
 } = require("../controllers/authController");
 
 const { protect } = require("../middleware/auth");
@@ -19,7 +20,9 @@ router.post("/login", login);
 router.get("/me", protect, getMe);
 
 // Logout
-
 router.post("/logout", logout);
+
+// Google OAuth
+router.post("/google", googleLogin);
 
 module.exports = router;

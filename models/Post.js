@@ -20,6 +20,7 @@ const postSchema = new mongoose.Schema(
         "Web Dev",
         "AI/ML",
         "Devops",
+        "DevOps",
         "UI/UX",
         "Q&A",
         "Project",

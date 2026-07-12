@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../api/auth";
+import { GoogleLogin } from "@react-oauth/google";
+import { loginUser, googleLoginUser } from "../api/auth";
 
 function Login({ onLogin }) {
   const navigate = useNavigate();
@@ -18,6 +19,16 @@ function Login({ onLogin }) {
       navigate("/posts");
     } catch (error) {
       setError(error.message);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      await googleLoginUser(credentialResponse.credential);
+      await onLogin();
+      navigate("/posts");
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -48,6 +59,16 @@ function Login({ onLogin }) {
           </div>
           <button type="submit">Login</button>
         </form>
+
+        <div className="divider">
+          <span>or</span>
+        </div>
+
+        <GoogleLogin
+          onSuccess={handleGoogleSuccess}
+          onError={() => setError("Google login failed")}
+        />
+
         <p className="auth-link">
           Don't have an account? <Link to="/register">Register</Link>
         </p>
